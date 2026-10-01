@@ -14,7 +14,7 @@ Output - draw new pixels, sound, haptic (senses)
 import pygame as pg
 from os import path
 from settings import *
-from sprites import *
+from sprites_coz1 import *
 from utils import *
 
 # Game class (a blueprint for entire game).
