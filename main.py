@@ -9,12 +9,17 @@ Input - keys, buttons, voice, mouse, touch, breath, movement, control stick
 Process - input processed (direction of control, magnitude)
 Output - draw new pixels, sound, haptic (senses)
 (Store)
+
+GOALS: 
+RULES:
+FEEDBACK:
+FREEDOM:
 """
 
 import pygame as pg
 from os import path
 from settings import *
-from sprites_coz1 import *
+from sprites import *
 from utils import *
 
 # Game class (a blueprint for entire game).
