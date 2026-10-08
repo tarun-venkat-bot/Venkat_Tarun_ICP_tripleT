@@ -10,10 +10,10 @@ Process - input processed (direction of control, magnitude)
 Output - draw new pixels, sound, haptic (senses)
 (Store)
 
-GOALS: 
-RULES:
-FEEDBACK:
-FREEDOM:
+GOALS: get to a shark character
+RULES: time limit, no touching cup enemies
+FEEDBACK: 
+FREEDOM: 
 """
 
 import pygame as pg
