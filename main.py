@@ -12,8 +12,8 @@ Output - draw new pixels, sound, haptic (senses)
 
 GOALS: get to a shark character
 RULES: time limit, no touching cup enemies
-FEEDBACK: 
-FREEDOM: 
+FEEDBACK: screen turns red if touching enemy, gold if touching target
+FREEDOM: movement within walls, ability to touch enemies or targets
 """
 
 import pygame as pg
@@ -22,7 +22,7 @@ from settings import *
 from sprites import *
 from utils import *
 
-# Game class (a blueprint for entire game).
+# Game class (blueprint for entire game).
 class Game:
     def __init__(self):
         pg.init()
@@ -46,13 +46,15 @@ class Game:
         self.load_data('level1.txt')
         self.all_sprites = pg.sprite.Group()
         self.all_walls = pg.sprite.Group()
+        self.all_mobs = pg.sprite.Group()
 
-        #instantiate player and read wall data here
-        self.wall = Wall(self, 0, 10)
+        #instantiate player
         for row, tiles in enumerate(self.map.data):
             for col, tile in enumerate(tiles):
                 if tile == '1':
                     Wall(self, col, row)
+                if tile == 'M':
+                    Mob(self, col, row)
         for row, tiles in enumerate(self.map.data):
             for col, tile in enumerate(tiles):
                 if tile == 'P':
@@ -60,7 +62,6 @@ class Game:
                 
     #physically run code
     def run(self):
-        self.load_data('level1.txt')
         while self.running:
             self.dt = self.clock.tick(FPS) / 1000
             self.events()  #gets player input.
@@ -83,9 +84,10 @@ class Game:
     def draw(self):
         self.screen.fill(BLUE)
         self.all_sprites.draw(self.screen)
-
+        self.draw_text("fps: "+str(floor(1/self.dt)),24, WHITE, WIDTH/2, HEIGHT/4)
         pg.display.flip()
 
+    #draw text on screen anywhere
     def draw_text(self, text, size, color, x, y):
         font_name = pg.font.match_font('arial')
         font = pg.font.Font(font_name, size)
@@ -97,8 +99,9 @@ class Game:
 #run game loop
 if __name__ == "__main__":
     g = Game()
-    while g.running:
-        g.new()
-        g.run()
 
-    pg.quit()
+while g.running:
+    g.new()
+    g.run()
+
+pg.quit()

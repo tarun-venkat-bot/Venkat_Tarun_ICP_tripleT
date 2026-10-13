@@ -42,23 +42,15 @@ class Player(Sprite):
         self.groups = game.all_sprites
         Sprite.__init__(self, self.groups)
         self.game = game
-
         #provides us with raster images for use in animations etc
         self.spritesheet = Spritesheet(path.join(self.game.img_dir, "sprite_sheet.png"))
         self.image = pg.Surface((TILESIZE, TILESIZE))
         self.image = self.spritesheet.get_image(0,0,TILESIZE, TILESIZE)
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
-
-        self.rect.x = x
-        self.rect.y = y
         self.vel = vec(0,0)
         self.pos = vec(x,y) * TILESIZE
         self.hit_rect = PLAYER_HIT_RECT
-        # self.x = x * TILESIZE
-        # self.y = y * TILESIZE
-
-        
         # start with current frames and last update at zero so we can cycle through animations
         self.current_frame = 0
         self.last_update = 0
@@ -67,6 +59,7 @@ class Player(Sprite):
         self.jumping = False
         self.moving = False
         print("player instance created")
+        self.load_images()
 
     # gets player input
     def get_keys(self):
@@ -101,9 +94,9 @@ class Player(Sprite):
         if not self.jumping and not self.moving:
             if now - self.last_update > 350:
                 self.last_update = now
-                self.current_frame = (self.current_frame + 1) % len(self.standing_frames)
+                self.current_frame = (self.current_frame + 1) % len(self.idle_frames)
                 bottom = self.rect.bottom
-                self.image = self.standing_frames[self.current_frame]
+                self.image = self.idle_frames[self.current_frame]
                 self.rect = self.image.get_rect()
                 self.rect.bottom = bottom
 
@@ -153,17 +146,18 @@ class Mob(Sprite):
         self.game = game
 
         #provides us with raster images for use in animations etc
-        self.spritesheet = Spritesheet(path.join(self.game.img_dir, "sprite_sheet1.png"))
+        self.spritesheet = Spritesheet(path.join(self.game.img_dir, "sprite_sheet.png"))
         self.image = pg.Surface((TILESIZE, TILESIZE))
-        self.image = self.spritesheet.get_image(0,0,TILESIZE, TILESIZE)
+        self.image = self.spritesheet.get_image(64,0,TILESIZE, TILESIZE)
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
 
         self.rect.x = x
         self.rect.y = y
+        self.speed = 100
         self.vel = vec(0,0)
         self.pos = vec(x,y) * TILESIZE
-        self.hit_rect = PLAYER_HIT_RECT
+        self.hit_rect = MOB_HIT_RECT
 
         # start with current frames and last update at zero so we can cycle through animations
         self.current_frame = 0
@@ -172,19 +166,20 @@ class Mob(Sprite):
         #accounts for player state (state machine)
         self.jumping = False
         self.moving = False
-        print("player instance created")
+        print("mob instance created")
+        self.load_images()
 
     def load_images(self):
-        self.idle_frames = [self.spritesheet.get_image(0,0, TILESIZE,TILESIZE), self.spritesheet.get_image(32,0, TILESIZE,TILESIZE)]
+        self.idle_frames = [self.spritesheet.get_image(64,0, TILESIZE,TILESIZE), self.spritesheet.get_image(96,0, TILESIZE,TILESIZE)]
 
     def animate(self):
         now = pg.time.get_ticks()
         if not self.jumping and not self.moving:
             if now - self.last_update > 350:
                 self.last_update = now
-                self.current_frame = (self.current_frame + 1) % len(self.standing_frames)
+                self.current_frame = (self.current_frame + 1) % len(self.idle_frames)
                 bottom = self.rect.bottom
-                self.image = self.standing_frames[self.current_frame]
+                self.image = self.idle_frames[self.current_frame]
                 self.rect = self.image.get_rect()
                 self.rect.bottom = bottom
 
@@ -196,6 +191,12 @@ class Mob(Sprite):
                 self.image = self.moving_frames[self.current_frame]
                 self.rect = self.image.get_rect()
                 self.rect.bottom = bottom
+
+    def follow(self,obj):
+        direction = vec(obj.rect.centerx - self.rect.centerx, obj.rect.centery - self.rect.centery)
+        if direction.length() > 0:
+            direction = direction.normalize()
+        self.vel = direction
             
     def update(self):
         self.animate()
