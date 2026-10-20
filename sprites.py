@@ -58,6 +58,7 @@ class Player(Sprite):
         #accounts for player state (state machine)
         self.jumping = False
         self.moving = False
+        self.coins = 0 
         print("player instance created")
         self.load_images()
 
@@ -111,10 +112,13 @@ class Player(Sprite):
             
     def update(self):
         self.get_keys()
-        self.animate()
         self.rect.center = self.pos
-
         self.pos += self.vel * self.game.dt
+        hits = pg.sprite.spritecollide(self, self.game.all_coins, True)
+        if hits:
+            self.coins +=1
+            print(f"i have {self.coins} a coin")
+            
         self.hit_rect.centerx = self.pos.x
         collide_with_walls(self, self.game.all_walls, 'x')
         self.hit_rect.centery = self.pos.y
@@ -129,14 +133,32 @@ class Wall(Sprite):
         self.image = pg.Surface((TILESIZE, TILESIZE))
         self.image.fill(GREEN)
         self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-        self.vx, self.vy = 0,0
-        self.x = x * TILESIZE
-        self.y = y * TILESIZE
-        self.rect.x = self.x
-        self.rect.y = self.y
+        # self.rect.x = x
+        # self.rect.y = y
+        # self.vx, self.vy = 0,0
+        # self.x = x * TILESIZE
+        # self.y = y * TILESIZE
+        # self.rect.x = self.x
+        # self.rect.y = self.y
+        self.vel = vec(0,0)
+        self.pos = vec(x,y) *TILESIZE
+        self.rect.center = self.pos
         print("wall instance created")
+
+#copy wall class to make a coin class
+class Coin(Sprite):
+    def __init__(self, game, x, y):
+        self.groups = game.all_sprites, game.all_coins
+        Sprite.__init__(self, self.groups)
+        self.game = game
+        self.image = pg.Surface((TILESIZE, TILESIZE))
+        pg.draw.circle(self.image, GOLD, (TILESIZE/2,TILESIZE/2), TILESIZE/2)
+        # self.image.fill(GOLD)
+        self.rect = self.image.get_rect()
+        self.vel = vec(0,0)
+        self.pos = vec(x,y) *TILESIZE
+        self.rect.center = self.pos
+        print("coin instance created")
 
 #make a mob class similar to the player but without key commands
 class Mob(Sprite):
@@ -193,11 +215,11 @@ class Mob(Sprite):
                 self.rect.bottom = bottom
 
     def follow(self,obj):
-        direction = vec(obj.rect.centerx - self.rect.centerx, obj.rect.centery - self.rect.centery)
-        if direction.length() > 0:
-            direction = direction.normalize()
-        self.vel = direction
-            
+                direction = vec(obj.rect.centerx - self.rect.centerx, obj.rect.centery - self.rect.centery)
+                if direction.length() > 0:
+                    direction = direction.normalize()
+                self.vel = direction
+    
     def update(self):
         self.animate()
         self.rect.center = self.pos
