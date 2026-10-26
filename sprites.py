@@ -3,6 +3,7 @@ from pygame.sprite import Sprite
 from settings import *
 from utils import *
 from os import path
+from random import randint, choice
 
 vec = pg.math.Vector2
 
@@ -119,6 +120,9 @@ class Player(Sprite):
             self.coins +=1
             self.game.score+=1
             self.game.pickup_snd.play()
+            for i in range(randint(80,120)):
+                Particle(self.game,hits[0].rect.x,hits[0].rect.y,choice(colors))
+                hits[0].kill()
             
         self.hit_rect.centerx = self.pos.x
         collide_with_walls(self, self.game.all_walls, 'x')
@@ -146,20 +150,29 @@ class Wall(Sprite):
         self.rect.center = self.pos
         print("wall instance created")
 
-#copy wall class to make a coin class
-class Coin(Sprite):
-    def __init__(self, game, x, y):
-        self.groups = game.all_sprites, game.all_coins
+class Particle(Sprite):
+    def __init__(self, game, x, y,color):
+        self.groups = game.all_sprites, game.all_particles
         Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = pg.Surface((TILESIZE, TILESIZE))
-        pg.draw.circle(self.image, GOLD, (TILESIZE/2,TILESIZE/2), TILESIZE/2)
-        # self.image.fill(GOLD)
+        self.image = pg.Surface((TILESIZE/4, TILESIZE/4))
+        self.image.fill(color)
         self.rect = self.image.get_rect()
         self.vel = vec(0,0)
-        self.pos = vec(x,y) *TILESIZE
+        self.pos = vec(x,y)
         self.rect.center = self.pos
-        print("coin instance created")
+        self.speed = 12
+        self.countdown = Cooldown()
+        self.countdown.event_time = floor(pg.time.get_ticks()/1000)
+        print("particle created")
+
+    def update(self):
+        self.countdown.ticking()
+        self.rect.x += self.speed* randint(-5,5)
+        self.rect.y += self.speed* randint(-5,5)
+        if self.countdown.delta > 1:
+            self.kill()
+            print(str(len(self.game.all_particles)))
 
 #make a mob class similar to the player but without key commands
 class Mob(Sprite):
@@ -223,11 +236,27 @@ class Mob(Sprite):
     
     def update(self):
         self.animate()
-        self.rect.center = self.pos
+        self.follow(self.game.player)
 
-        self.pos += self.vel * self.game.dt
+        self.pos += self.vel * self.speed* self.game.dt
         self.hit_rect.centerx = self.pos.x
         collide_with_walls(self, self.game.all_walls, 'x')
         self.hit_rect.centery = self.pos.y
         collide_with_walls(self, self.game.all_walls, 'y')
         self.rect.center = self.hit_rect.center
+
+#copy wall class to make a coin class
+class Coin(Sprite):
+    def __init__(self, game, x, y):
+        self.groups = game.all_sprites, game.all_coins
+        Sprite.__init__(self, self.groups)
+        self.game = game
+        self.image = pg.Surface((TILESIZE, TILESIZE))
+        pg.draw.circle(self.image, GOLD, (TILESIZE/2,TILESIZE/2), TILESIZE/2)
+        self.image.set_colorkey(BLACK)
+        # self.image.fill(GOLD)
+        self.rect = self.image.get_rect()
+        self.vel = vec(0,0)
+        self.pos = vec(x,y) *TILESIZE
+        self.rect.center = self.pos
+        print("coin instance created")
