@@ -14,6 +14,11 @@ GOALS: get to a shark character
 RULES: time limit, no touching cup enemies
 FEEDBACK: screen turns red if touching enemy, gold if touching target
 FREEDOM: movement within walls, ability to touch enemies or targets
+
+GOALS: hit all the plant bombs to defuse them
+RULES: defuse them within time or blow up, dont touch enemies
+FEEDBACK: ticking sound when time moves on
+FREEDOM: fight enemies, defuse bombs, etc.
 """
 
 import pygame as pg
@@ -71,6 +76,7 @@ class Game:
         self.all_mobs = pg.sprite.Group()
         self.all_coins = pg.sprite.Group()
         self.all_particles = pg.sprite.Group()
+        self.all_tiles = pg.sprite.Group()
 
         #instantiate player
         for row, tiles in enumerate(self.map.data):
@@ -81,11 +87,15 @@ class Game:
                     Mob(self, col, row)
                 if tile == 'C':
                     Coin(self, col, row)
-        #reads for player using enumeration
-        for row, tiles in enumerate(self.map.data):
-            for col, tile in enumerate(tiles):
                 if tile == 'P':
                     self.player = Player(self, col, row)
+                if tile == 'I':
+                    f = FloorTile(self, col, row)
+                    f.variant = "ice"
+
+        #reads for player using enumeration
+        # for row, tiles in enumerate(self.map.data):
+        #     for col, tile in enumerate(tiles):
 
         pg.mixer.music.load(path.join(self.snd_dir, "background_music.wav"))
         pg.mixer.music.play(loops=-1)

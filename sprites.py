@@ -62,6 +62,7 @@ class Player(Sprite):
         #accounts for player state (state machine)
         self.jumping = False
         self.moving = False
+        self.cofric = -0.1
         self.coins = 0 
         print("player instance created")
         self.load_images()
@@ -75,22 +76,22 @@ class Player(Sprite):
         if keys[pg.K_a]:
             # self.vx = -PLAYER_SPEED
             # self.vel.x = -PLAYER_SPEED
-            self.acc.x = -5
+            self.acc.x = -PLAYER_ACC
 
         if keys[pg.K_d]:
             # self.vx = PLAYER_SPEED
             # self.vel.x = PLAYER_SPEED
-            self.acc.x = 5
+            self.acc.x = PLAYER_ACC
 
         if keys[pg.K_w]:
             # self.vy = -PLAYER_SPEED
             # self.vel.y = -PLAYER_SPEED
-            self.acc.y = -5
+            self.acc.y = -PLAYER_ACC
 
         if keys[pg.K_s]:
             # self.vy = PLAYER_SPEED
             # self.vel.y = PLAYER_SPEED
-            self.acc.y = 5
+            self.acc.y = PLAYER_ACC
 
         if self.vel.x != 0 and self.vel.y != 0:
             self.vel *= 0.7071
@@ -121,25 +122,49 @@ class Player(Sprite):
                 self.rect.bottom = bottom
             
     def update(self):
+        self.animate()
+        self.acc = vec(0,9.81) # if we're not on ice, reset acc
         #physics/acceleration math done here before updates
         # make vec(0,9.8) if u want a sidescroller
-        self.acc = vec(0,0)
+            # self.acc = vec(0,0) we dont want it to be reset to 0, move it to if its not on ice
         self.get_keys()
-        self.acc.x += self.vel.x*PLAYER_FRIC
-        self.acc.y += self.vel.y*PLAYER_FRIC
+        self.acc.x += self.vel.x*self.cofric
+        self.acc.y += self.vel.y*self.cofric
         self.vel +=self.acc
-        
-        
-        self.rect.center = self.pos
+
+        #Mr. Cozort prompted ai to get this acceleration math
+        max_fall_speed = TILESIZE / max(self.game.dt, 0.001)
+        self.vel.y = min(self.vel.y, max_fall_speed)
+
+        #condtional makes sure we arent moving when still (no decimal accelerations)
+        if abs(self.vel.x) < 0.1:
+            self.vel.x = 0
+        if abs(self.vel.y) < 0.1:
+            self.vel.y = 0
+
         # self.pos += self.vel * self.game.dt
-        self.pos += self.vel + 0.5*self.acc
+        # mr. Cozort also prompted ai to alter this "kinematic acceleration equation"
+        self.pos += self.vel * self.game.dt + 0.5 * self.acc * (self.game.dt ** 2)
+
+        #checks 
+        tile_hits = pg.sprite.spritecollide(self,self.game.all_tiles, False)
+        if tile_hits:
+            if tile_hits[0].variant == "ice":
+                self.cofric = -0.001
+            else:
+                self.cofric = -0.01
+
+        #sets the rectangle's position to the pos which is manipulated by all the math and vector stuff we did above
+        self.rect.center = self.pos
+
+        #collisions = hits, algortihm to check if colliding
         hits = pg.sprite.spritecollide(self, self.game.all_coins, True)
         if hits:
             self.coins +=1
             self.game.score+=1
             self.game.pickup_snd.play()
-            for i in range(randint(8,15)):
-                Particle(self.game,hits[0].rect.x,hits[0].rect.y,GOLD)
+            for i in range(randint(90,110)):
+                Particle(self.game, hits[0].rect.x, hits[0].rect.y)
                 hits[0].kill()
             
         self.hit_rect.centerx = self.pos.x
@@ -168,13 +193,27 @@ class Wall(Sprite):
         self.rect.center = self.pos
         print("wall instance created")
 
+class FloorTile(Sprite):
+    def __init__(self, game, x, y):
+        self.groups = game.all_sprites, game.all_walls
+        Sprite.__init__(self, self.groups)
+        self.game = game
+        self.image = pg.Surface((TILESIZE, TILESIZE))
+        self.image.fill(CYAN)
+        self.rect = self.image.get_rect()
+        self.vel = vec(0,0)
+        self.pos = vec(x,y) *TILESIZE
+        self.rect.center = self.pos
+        self.variant = "ice"
+        print("wall instance created")
+
 class Particle(Sprite):
-    def __init__(self, game, x, y,color):
+    def __init__(self, game, x, y):
         self.groups = game.all_sprites, game.all_particles
         Sprite.__init__(self, self.groups)
         self.game = game
         self.image = pg.Surface((TILESIZE/4, TILESIZE/4))
-        self.image.fill(color)
+        self.image.fill(GOLD)
         self.rect = self.image.get_rect()
         self.vel = vec(0,0)
         self.pos = vec(x,y)
@@ -247,10 +286,10 @@ class Mob(Sprite):
                 self.rect.bottom = bottom
 
     def follow(self,obj):
-                direction = vec(obj.rect.centerx - self.rect.centerx, obj.rect.centery - self.rect.centery)
-                if direction.length() > 0:
-                    direction = direction.normalize()
-                self.vel = direction
+        direction = vec(obj.rect.centerx - self.rect.centerx, obj.rect.centery - self.rect.centery)
+        if direction.length() > 0:
+            direction = direction.normalize()
+        self.vel = direction
     
     def update(self):
         self.animate()
