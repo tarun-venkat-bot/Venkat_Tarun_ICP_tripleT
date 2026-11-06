@@ -77,6 +77,7 @@ class Game:
         self.all_coins = pg.sprite.Group()
         self.all_particles = pg.sprite.Group()
         self.all_tiles = pg.sprite.Group()
+        self.all_spikes = pg.sprite.Group()
 
         #instantiate player
         for row, tiles in enumerate(self.map.data):
@@ -92,6 +93,8 @@ class Game:
                 if tile == 'I':
                     f = FloorTile(self, col, row)
                     f.variant = "ice"
+                if tile == 'S':
+                    Spike(self, col, row)
 
         #reads for player using enumeration
         # for row, tiles in enumerate(self.map.data):

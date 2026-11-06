@@ -54,6 +54,7 @@ class Player(Sprite):
         self.acc = vec(0,0)
         self.vel = vec(0,0)
         self.pos = vec(x,y) * TILESIZE
+        self.cofric = PLAYER_FRIC
         self.hit_rect = PLAYER_HIT_RECT
         # start with current frames and last update at zero so we can cycle through animations
         self.current_frame = 0
@@ -62,7 +63,7 @@ class Player(Sprite):
         #accounts for player state (state machine)
         self.jumping = False
         self.moving = False
-        self.cofric = -0.1
+
         self.coins = 0 
         print("player instance created")
         self.load_images()
@@ -72,35 +73,32 @@ class Player(Sprite):
         # self.vel = vec(0,0)
         # self.vx, self.vy = 0,0
         keys = pg.key.get_pressed()
-
         if keys[pg.K_a]:
             # self.vx = -PLAYER_SPEED
             # self.vel.x = -PLAYER_SPEED
             self.acc.x = -PLAYER_ACC
-
         if keys[pg.K_d]:
             # self.vx = PLAYER_SPEED
             # self.vel.x = PLAYER_SPEED
             self.acc.x = PLAYER_ACC
-
         if keys[pg.K_w]:
             # self.vy = -PLAYER_SPEED
             # self.vel.y = -PLAYER_SPEED
             self.acc.y = -PLAYER_ACC
-
         if keys[pg.K_s]:
             # self.vy = PLAYER_SPEED
             # self.vel.y = PLAYER_SPEED
             self.acc.y = PLAYER_ACC
-
         if self.vel.x != 0 and self.vel.y != 0:
             self.vel *= 0.7071
+            # 0.7071 is root(2) which is the hyptenuse of a pixel (1x1)
+    
     def jump(self):
         pass
-
+    #loading a spritesheet instead of individual images 
     def load_images(self):
         self.idle_frames = [self.spritesheet.get_image(0,0, TILESIZE,TILESIZE), self.spritesheet.get_image(32,0, TILESIZE,TILESIZE)]
-
+    #method swaps between frames in sprietsheet to animate
     def animate(self):
         now = pg.time.get_ticks()
         if not self.jumping and not self.moving:
@@ -123,23 +121,24 @@ class Player(Sprite):
             
     def update(self):
         self.animate()
-        self.acc = vec(0,9.81) # if we're not on ice, reset acc
+        self.acc = vec(0,10) # if we're not on ice, reset acc
         #physics/acceleration math done here before updates
         # make vec(0,9.8) if u want a sidescroller
-            # self.acc = vec(0,0) we dont want it to be reset to 0, move it to if its not on ice
+        # self.acc = vec(0,0) we dont want it to be reset to 0, move it to if its not on ice
         self.get_keys()
         self.acc.x += self.vel.x*self.cofric
-        self.acc.y += self.vel.y*self.cofric
+        self.acc.y += self.vel.y * self.cofric
+        #self.acc.y += self.vel.y # use for gravity (if self.acc = vec(0,9.8))
         self.vel +=self.acc
 
         #Mr. Cozort prompted ai to get this acceleration math
-        max_fall_speed = TILESIZE / max(self.game.dt, 0.001)
-        self.vel.y = min(self.vel.y, max_fall_speed)
+        # max_fall_speed = TILESIZE / max(self.game.dt, 0.001)
+        # self.vel.y = min(self.vel.y, max_fall_speed)
 
         #condtional makes sure we arent moving when still (no decimal accelerations)
-        if abs(self.vel.x) < 0.1:
+        if abs(self.vel.x) < 0.25:
             self.vel.x = 0
-        if abs(self.vel.y) < 0.1:
+        if abs(self.vel.y) < 0.25:
             self.vel.y = 0
 
         # self.pos += self.vel * self.game.dt
@@ -163,16 +162,20 @@ class Player(Sprite):
             self.coins +=1
             self.game.score+=1
             self.game.pickup_snd.play()
-            for i in range(randint(90,110)):
+            for i in range(20):
                 Particle(self.game, hits[0].rect.x, hits[0].rect.y)
                 hits[0].kill()
-            
+
+        #collision with walls done here
         self.hit_rect.centerx = self.pos.x
         collide_with_walls(self, self.game.all_walls, 'x')
         self.hit_rect.centery = self.pos.y
         collide_with_walls(self, self.game.all_walls, 'y')
+
+        #actually setting the player's coords to based on the acceleration
         self.rect.center = self.hit_rect.center
 
+#walls make up the maze
 class Wall(Sprite):
     def __init__(self, game, x, y):
         self.groups = game.all_sprites, game.all_walls
@@ -192,6 +195,20 @@ class Wall(Sprite):
         self.pos = vec(x,y) *TILESIZE
         self.rect.center = self.pos
         print("wall instance created")
+
+#spike class coppied from wall class and code helped from cs50ai
+class Spike(Sprite):
+    def __init__(self, game, x, y):
+        self.groups = game.all_sprites, game.all_spikes
+        Sprite.__init__(self, self.groups)
+        self.game = game
+        self.image = pg.Surface((TILESIZE, TILESIZE))
+        self.image.fill(RED)
+        self.rect = self.image.get_rect()
+        self.vel = vec(0,0)
+        self.pos = vec(x,y) *TILESIZE
+        self.rect.center = self.pos
+        print("spike instance created")
 
 class FloorTile(Sprite):
     def __init__(self, game, x, y):
@@ -225,8 +242,10 @@ class Particle(Sprite):
 
     def update(self):
         self.countdown.ticking()
-        self.rect.x += self.speed* randint(-3,3)
-        self.rect.y += self.speed* randint(-3,3)
+        self.randx = randint(-3,3)
+        self.randy = randint(-3,3)
+        self.rect.x += self.speed* self.randx
+        self.rect.y += self.speed* self.randy
         if self.countdown.delta > 1:
             self.kill()
             print(str(len(self.game.all_particles)))
