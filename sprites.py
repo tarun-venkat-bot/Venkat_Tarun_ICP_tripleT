@@ -4,6 +4,7 @@ from settings import *
 from utils import *
 from os import path
 from random import randint, choice
+from time import sleep
 
 vec = pg.math.Vector2
 
@@ -64,6 +65,7 @@ class Player(Sprite):
         self.jumping = False
         self.moving = False
 
+        # coins and debug prints
         self.coins = 0 
         print("player instance created")
         self.load_images()
@@ -89,8 +91,8 @@ class Player(Sprite):
             # self.vy = PLAYER_SPEED
             # self.vel.y = PLAYER_SPEED
             self.acc.y = PLAYER_ACC
-        if self.vel.x != 0 and self.vel.y != 0:
-            self.vel *= 0.7071
+        # if self.vel.x != 0 and self.vel.y != 0:
+        #     self.vel *= 0.7071
             # 0.7071 is root(2) which is the hyptenuse of a pixel (1x1)
     
     def jump(self):
@@ -121,29 +123,33 @@ class Player(Sprite):
             
     def update(self):
         self.animate()
-        self.acc = vec(0,10) # if we're not on ice, reset acc
+        self.acc = vec(0,9.8) # if we're not on ice, reset acc
+
         #physics/acceleration math done here before updates
         # make vec(0,9.8) if u want a sidescroller
         # self.acc = vec(0,0) we dont want it to be reset to 0, move it to if its not on ice
         self.get_keys()
-        self.acc.x += self.vel.x*self.cofric
+        self.acc.x += self.vel.x * self.cofric
         self.acc.y += self.vel.y * self.cofric
+
+        # self.acc.y += self.vel.y * self.cofric
         #self.acc.y += self.vel.y # use for gravity (if self.acc = vec(0,9.8))
-        self.vel +=self.acc
+        self.vel += self.acc
 
         #Mr. Cozort prompted ai to get this acceleration math
-        # max_fall_speed = TILESIZE / max(self.game.dt, 0.001)
-        # self.vel.y = min(self.vel.y, max_fall_speed)
+        max_fall_speed = TILESIZE / max(self.game.dt, 0.001)
+        self.vel.y = min(self.vel.y, max_fall_speed)
 
         #condtional makes sure we arent moving when still (no decimal accelerations)
-        if abs(self.vel.x) < 0.25:
+        if abs(self.vel.x) < 0.1:
             self.vel.x = 0
-        if abs(self.vel.y) < 0.25:
+        if abs(self.vel.y) < 0.1:
             self.vel.y = 0
 
-        # self.pos += self.vel * self.game.dt
+        # self.pos += self.vel * self.game.dt   
         # mr. Cozort also prompted ai to alter this "kinematic acceleration equation"
         self.pos += self.vel * self.game.dt + 0.5 * self.acc * (self.game.dt ** 2)
+        # self.pos += self.vel + 0.5 * self.acc
 
         #checks 
         tile_hits = pg.sprite.spritecollide(self,self.game.all_tiles, False)
@@ -172,7 +178,7 @@ class Player(Sprite):
         self.hit_rect.centery = self.pos.y
         collide_with_walls(self, self.game.all_walls, 'y')
 
-        #actually setting the player's coords to based on the acceleration
+        #actually setting the player's coords to based on collisions
         self.rect.center = self.hit_rect.center
 
 #walls make up the maze
@@ -232,23 +238,29 @@ class Particle(Sprite):
         self.image = pg.Surface((TILESIZE/4, TILESIZE/4))
         self.image.fill(GOLD)
         self.rect = self.image.get_rect()
-        self.vel = vec(0,0)
+        self.vel = vec(randint(-180,180),randint(-180,180)) 
+        # self.vel = vec(0,0)
         self.pos = vec(x,y)
+        self.speed = 2
         self.rect.center = self.pos
-        self.speed = 12
+        
         self.countdown = Cooldown()
         self.countdown.event_time = floor(pg.time.get_ticks()/1000)
         print("particle created")
 
     def update(self):
         self.countdown.ticking()
-        self.randx = randint(-3,3)
-        self.randy = randint(-3,3)
-        self.rect.x += self.speed* self.randx
-        self.rect.y += self.speed* self.randy
+        # i tried to set the random speed multipliers before the particle was made, it didnt work
+        # self.randx = 
+        # self.randy = randint(-3,3)
+        self.pos += self.vel * self.speed * self.game.dt
+        # self.rect.x += self.speed* randint(-3,3)
+        # self.rect.y += self.speed* randint(-3,3)
         if self.countdown.delta > 1:
             self.kill()
             print(str(len(self.game.all_particles)))
+        self.rect.x = self.pos.x
+        self.rect.y = self.pos.y
 
 #make a mob class similar to the player but without key commands
 class Mob(Sprite):
@@ -264,6 +276,7 @@ class Mob(Sprite):
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
 
+        #set mob position
         self.rect.x = x
         self.rect.y = y
         self.speed = 100
@@ -322,14 +335,14 @@ class Mob(Sprite):
         self.rect.center = self.hit_rect.center
 
 #copy wall class to make a coin class
-class Coin(Sprite):
+class Bomb(Sprite):
     def __init__(self, game, x, y):
         self.groups = game.all_sprites, game.all_coins
         Sprite.__init__(self, self.groups)
         self.game = game
         self.image = pg.Surface((TILESIZE, TILESIZE))
-        pg.draw.circle(self.image, GOLD, (TILESIZE/2,TILESIZE/2), TILESIZE/2)
-        self.image.set_colorkey(BLACK)
+        pg.draw.circle(self.image, BLACK, (TILESIZE/2,TILESIZE/2), TILESIZE/2)
+        # self.image.set_colorkey(BLACK)
         # self.image.fill(GOLD)
         self.rect = self.image.get_rect()
         self.vel = vec(0,0)

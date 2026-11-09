@@ -87,7 +87,7 @@ class Game:
                 if tile == 'M':
                     Mob(self, col, row)
                 if tile == 'C':
-                    Coin(self, col, row)
+                    Bomb(self, col, row)
                 if tile == 'P':
                     self.player = Player(self, col, row)
                 if tile == 'I':
@@ -137,7 +137,7 @@ class Game:
         text_rect.midtop = (x,y)
         self.screen.blit(text_surface, text_rect)
     
-    #actually draws the objects.
+    #actually draws the objects
     def draw(self):
         self.screen.fill(BLUE)
         self.all_sprites.draw(self.screen)
