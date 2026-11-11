@@ -18,10 +18,10 @@ def collide_with_walls(sprite, group, dir):
         hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
         if hits:
             # this line checks to see if we're to the left of the wall
-            if hits[0].rect.centerx > sprite.hit_rect.centerx:
+            if sprite.vel.x > 0:
                 # reposition the player (sprite) to the left side of the wall
                 sprite.pos.x = hits[0].rect.left - sprite.hit_rect.width / 2
-            if hits[0].rect.centerx < sprite.hit_rect.centerx:
+            if sprite.vel.x < 0:
                 sprite.pos.x = hits[0].rect.right + sprite.hit_rect.width / 2 
             sprite.vel.x = 0
             sprite.hit_rect.centerx = sprite.pos.x
@@ -31,10 +31,10 @@ def collide_with_walls(sprite, group, dir):
         hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
         if hits:
             # checks if we're above the wall
-            if hits[0].rect.centery > sprite.hit_rect.centery:
+            if sprite.vel.y > 0:
                 # reposition the player (sprite) to the top of the wall
                 sprite.pos.y = hits[0].rect.top - sprite.hit_rect.height / 2
-            if hits[0].rect.centery < sprite.hit_rect.centery:
+            if sprite.vel.y < 0:
                 sprite.pos.y = hits[0].rect.bottom + sprite.hit_rect.height / 2 
             sprite.vel.y = 0
             sprite.hit_rect.centery = sprite.pos.y
@@ -130,15 +130,14 @@ class Player(Sprite):
         # self.acc = vec(0,0) we dont want it to be reset to 0, move it to if its not on ice
         self.get_keys()
         self.acc.x += self.vel.x * self.cofric
-        self.acc.y += self.vel.y * self.cofric
-
         # self.acc.y += self.vel.y * self.cofric
-        #self.acc.y += self.vel.y # use for gravity (if self.acc = vec(0,9.8))
+
+        self.acc.y += self.vel.y *-0.2# use for gravity (if self.acc = vec(0,9.8))
         self.vel += self.acc
 
         #Mr. Cozort prompted ai to get this acceleration math
-        max_fall_speed = TILESIZE / max(self.game.dt, 0.001)
-        self.vel.y = min(self.vel.y, max_fall_speed)
+        # max_fall_speed = TILESIZE / max(self.game.dt, 0.001)
+        # self.vel.y = min(self.vel.y, max_fall_speed)
 
         #condtional makes sure we arent moving when still (no decimal accelerations)
         if abs(self.vel.x) < 0.1:
@@ -236,7 +235,7 @@ class Particle(Sprite):
         Sprite.__init__(self, self.groups)
         self.game = game
         self.image = pg.Surface((TILESIZE/4, TILESIZE/4))
-        self.image.fill(GOLD)
+        self.image.fill(RED)
         self.rect = self.image.get_rect()
         self.vel = vec(randint(-180,180),randint(-180,180)) 
         # self.vel = vec(0,0)
@@ -317,6 +316,7 @@ class Mob(Sprite):
                 self.rect = self.image.get_rect()
                 self.rect.bottom = bottom
 
+    #look towards the player and normalize() or close the distance down
     def follow(self,obj):
         direction = vec(obj.rect.centerx - self.rect.centerx, obj.rect.centery - self.rect.centery)
         if direction.length() > 0:
@@ -344,6 +344,7 @@ class Bomb(Sprite):
         pg.draw.circle(self.image, BLACK, (TILESIZE/2,TILESIZE/2), TILESIZE/2)
         # self.image.set_colorkey(BLACK)
         # self.image.fill(GOLD)
+        
         self.rect = self.image.get_rect()
         self.vel = vec(0,0)
         self.pos = vec(x,y) *TILESIZE
