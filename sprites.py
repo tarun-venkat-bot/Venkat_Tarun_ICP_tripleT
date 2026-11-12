@@ -123,16 +123,16 @@ class Player(Sprite):
             
     def update(self):
         self.animate()
-        self.acc = vec(0,9.8) # if we're not on ice, reset acc
+        self.acc = vec(0,2) # we dont want it to be reset to 0, move it to if its not on ice
+        # self.acc = vec(0,0) # for topdown
 
-        #physics/acceleration math done here before updates
-        # make vec(0,9.8) if u want a sidescroller
-        # self.acc = vec(0,0) we dont want it to be reset to 0, move it to if its not on ice
+        #physics/acceleration math done here before updates (most tweaked/updated code section)
+        
         self.get_keys()
         self.acc.x += self.vel.x * self.cofric
         # self.acc.y += self.vel.y * self.cofric
 
-        self.acc.y += self.vel.y *-0.2# use for gravity (if self.acc = vec(0,9.8))
+        #self.acc.y += self.vel.y# use for gravity (if self.acc = vec(0,9.8))
         self.vel += self.acc
 
         #Mr. Cozort prompted ai to get this acceleration math
@@ -147,19 +147,19 @@ class Player(Sprite):
 
         # self.pos += self.vel * self.game.dt   
         # mr. Cozort also prompted ai to alter this "kinematic acceleration equation"
-        self.pos += self.vel * self.game.dt + 0.5 * self.acc * (self.game.dt ** 2)
+        self.pos += self.vel + 0.5 * self.acc
         # self.pos += self.vel + 0.5 * self.acc
 
-        #checks 
+        #sets the rectangle's position to the pos which is manipulated by all the math and vector stuff we did above
+        self.rect.center = self.pos
+
+        #checks collisions
         tile_hits = pg.sprite.spritecollide(self,self.game.all_tiles, False)
         if tile_hits:
             if tile_hits[0].variant == "ice":
                 self.cofric = -0.001
             else:
                 self.cofric = -0.01
-
-        #sets the rectangle's position to the pos which is manipulated by all the math and vector stuff we did above
-        self.rect.center = self.pos
 
         #collisions = hits, algortihm to check if colliding
         hits = pg.sprite.spritecollide(self, self.game.all_coins, True)
@@ -217,7 +217,7 @@ class Spike(Sprite):
 
 class FloorTile(Sprite):
     def __init__(self, game, x, y):
-        self.groups = game.all_sprites, game.all_walls
+        self.groups = game.all_sprites, game.all_tiles, game.all_walls
         Sprite.__init__(self, self.groups)
         self.game = game
         self.image = pg.Surface((TILESIZE, TILESIZE))
@@ -327,7 +327,7 @@ class Mob(Sprite):
         self.animate()
         self.follow(self.game.player)
 
-        self.pos += self.vel * self.speed* self.game.dt
+        self.pos += self.vel * self.speed
         self.hit_rect.centerx = self.pos.x
         collide_with_walls(self, self.game.all_walls, 'x')
         self.hit_rect.centery = self.pos.y
@@ -340,8 +340,14 @@ class Bomb(Sprite):
         self.groups = game.all_sprites, game.all_coins
         Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = pg.Surface((TILESIZE, TILESIZE))
-        pg.draw.circle(self.image, BLACK, (TILESIZE/2,TILESIZE/2), TILESIZE/2)
+
+        #code prompted to chatgpt with assistance from cs50.ai
+        # self.image = pg.Surface((TILESIZE, TILESIZE))
+        self.image = pg.Surface((TILESIZE, TILESIZE), pg.SRCALPHA) 
+        # pg.SCRALPHA is a pygame method to make an object's parts transparent
+        pg.draw.circle(self.image, BLACK, (TILESIZE//2, TILESIZE//2), TILESIZE//2)  
+
+        # code below was used to make OG gold coins, issues arised when changing color to GOLD
         # self.image.set_colorkey(BLACK)
         # self.image.fill(GOLD)
         
@@ -349,4 +355,4 @@ class Bomb(Sprite):
         self.vel = vec(0,0)
         self.pos = vec(x,y) *TILESIZE
         self.rect.center = self.pos
-        print("coin instance created")
+        print("bomb instance created")
